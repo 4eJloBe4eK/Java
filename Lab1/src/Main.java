@@ -2,11 +2,11 @@ import java.util.*;
 
 public class Main {
     // Базовый класс для самолёта
-    static class Airplane {
-        String flightName;   // Название рейса
-        int passengers;      // Количество пассажиров
-        double fuel;         // Количество топлива
-        String type;         // Тип самолёта
+    static abstract class Airplane {
+        String flightName; // Название рейса
+        int passengers;    // Количество пассажиров
+        double fuel;       // Количество топлива
+        String type;       // Тип самолёта
 
         public Airplane(String flightName, int passengers, double fuel, String type) {
             this.flightName = flightName;
@@ -30,139 +30,168 @@ public class Main {
         }
     }
 
-    // Класс для пассажирского самолёта
+    // Классы для конкретных типов самолётов
     static class PassengerPlane extends Airplane {
         public PassengerPlane(String flightName, int passengers, double fuel) {
             super(flightName, passengers, fuel, "Пассажирский");
         }
     }
 
-    // Класс для грузового самолёта
     static class CargoPlane extends Airplane {
         public CargoPlane(String flightName, int passengers, double fuel) {
             super(flightName, passengers, fuel, "Грузовой");
         }
     }
 
-    // Класс для военного самолёта
     static class MilitaryPlane extends Airplane {
         public MilitaryPlane(String flightName, int passengers, double fuel) {
             super(flightName, passengers, fuel, "Военный");
         }
     }
 
+    // Класс репозитория
+    static class AirplaneRepository {
+        private final List<Airplane> airplanes = new ArrayList<>();
+
+        public void addAirplane(Airplane airplane) {
+            airplanes.add(airplane);
+            System.out.println("Самолёт успешно добавлен.");
+        }
+
+        public boolean removeAirplane(String flightName) {
+            return airplanes.removeIf(a -> a.flightName.equalsIgnoreCase(flightName));
+        }
+
+        public boolean updateAirplane(String flightName, int passengers, double fuel) {
+            for (Airplane airplane : airplanes) {
+                if (airplane.flightName.equalsIgnoreCase(flightName)) {
+                    airplane.passengers = passengers;
+                    airplane.fuel = fuel;
+                    System.out.println("Данные самолёта обновлены.");
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public List<Airplane> getAllAirplanes() {
+            return new ArrayList<>(airplanes);
+        }
+
+        public List<Airplane> findAirplanesByPassengerCount(int maxPassengers) {
+            return airplanes.stream()
+                    .filter(a -> a.passengers < maxPassengers)
+                    .toList();
+        }
+
+        public List<Airplane> findAirplanesByFirstLetter(char letter) {
+            return airplanes.stream()
+                    .filter(a -> a.flightName.toUpperCase().charAt(0) == Character.toUpperCase(letter))
+                    .toList();
+        }
+    }
+
+    // Вспомогательные методы для взаимодействия с пользователем
+    private static Airplane createAirplaneFromInput(Scanner scanner) {
+        System.out.print("Введите название рейса: ");
+        String flightName = scanner.nextLine();
+        System.out.print("Введите количество пассажиров: ");
+        int passengers = scanner.nextInt();
+        System.out.print("Введите количество топлива: ");
+        double fuel = scanner.nextDouble();
+        scanner.nextLine(); // Очистка буфера
+
+        System.out.print("Введите тип самолёта (пассажирский/грузовой/военный): ");
+        String type = scanner.nextLine().toLowerCase();
+
+        return switch (type) {
+            case "пассажирский" -> new PassengerPlane(flightName, passengers, fuel);
+            case "грузовой" -> new CargoPlane(flightName, passengers, fuel);
+            case "военный" -> new MilitaryPlane(flightName, passengers, fuel);
+            default -> {
+                System.out.println("Неверный тип самолёта.");
+                yield null;
+            }
+        };
+    }
+
+    private static void displayAirplanes(List<Airplane> airplanes) {
+        if (airplanes.isEmpty()) {
+            System.out.println("Список самолётов пуст.");
+        } else {
+            airplanes.forEach(Airplane::displayInfo);
+        }
+    }
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        List<Airplane> airplaneList = new ArrayList<>();
+        AirplaneRepository repository = new AirplaneRepository();
 
-        int choice = 0;
-        do {
+        while (true) {
             System.out.println();
             System.out.println("------------Меню------------");
             System.out.println("1. Добавить самолёт");
             System.out.println("2. Просмотреть все самолёты");
             System.out.println("3. Просмотреть самолёты с количеством пассажиров меньше заданного");
             System.out.println("4. Просмотреть самолёты, название которых начинается с заданной буквы");
-            System.out.println("5. Выход");
-            System.out.print("Выберите действие от 1 до 5: ");
+            System.out.println("5. Удалить самолёт по названию");
+            System.out.println("6. Изменить данные о самолёте");
+            System.out.println("7. Выход");
+            System.out.print("Выберите действие от 1 до 7: ");
+
             try {
-                choice = scanner.nextInt();
-                scanner.nextLine(); // Очистка буфера после nextInt()
+                int choice = scanner.nextInt();
+                scanner.nextLine(); // Очистка буфера
 
                 switch (choice) {
-                    case 1:
-                        System.out.print("Введите название рейса: ");
-                        String flightName = scanner.nextLine();
-                        System.out.print("Введите количество пассажиров: ");
-                        int passengers = scanner.nextInt();
-                        System.out.print("Введите количество топлива: ");
-                        double fuel = scanner.nextDouble();
-                        scanner.nextLine(); // Очистка буфера
-
-                        // Определение типа самолёта
-                        System.out.print("Введите тип самолёта (пассажирский/грузовой/военный): ");
-                        String type = scanner.nextLine().toLowerCase();
-                        Airplane airplane;
-                        switch (type) {
-                            case "пассажирский":
-                                airplane = new PassengerPlane(flightName, passengers, fuel);
-                                break;
-                            case "грузовой":
-                                airplane = new CargoPlane(flightName, passengers, fuel);
-                                break;
-                            case "военный":
-                                airplane = new MilitaryPlane(flightName, passengers, fuel);
-                                break;
-                            default:
-                                System.out.println("Неверный тип самолёта.");
-                                continue;
+                    case 1 -> {
+                        Airplane airplane = createAirplaneFromInput(scanner);
+                        if (airplane != null) {
+                            repository.addAirplane(airplane);
                         }
-                        airplaneList.add(airplane);
-                        break;
-
-                    case 2:
-                        if (airplaneList.isEmpty()) {
-                            System.out.println("Список самолётов пуст.");
-                        } else {
-                            for (Airplane a : airplaneList) {
-                                a.displayInfo();
-                            }
-                        }
-                        break;
-
-                    case 3:
+                    }
+                    case 2 -> displayAirplanes(repository.getAllAirplanes());
+                    case 3 -> {
                         System.out.print("Введите пороговое количество пассажиров: ");
-                        int threshold = scanner.nextInt();
-                        if (airplaneList.isEmpty()) {
-                            System.out.println("Список самолётов пуст.");
-                        } else {
-                            System.out.println("Самолёты с количеством пассажиров меньше " + threshold + ":");
-                            boolean found = false;
-                            for (Airplane a : airplaneList) {
-                                if (a.passengers < threshold) {
-                                    a.displayInfo();
-                                    found = true;
-                                }
-                            }
-                            if (!found) {
-                                System.out.println("Нет самолётов с количеством пассажиров меньше " + threshold + ".");
-                            }
-                        }
-                        break;
-
-                    case 4:
+                        int maxPassengers = scanner.nextInt();
+                        displayAirplanes(repository.findAirplanesByPassengerCount(maxPassengers));
+                    }
+                    case 4 -> {
                         System.out.print("Введите букву для фильтрации: ");
-                        char letter = scanner.nextLine().toUpperCase().charAt(0);
-                        if (airplaneList.isEmpty()) {
-                            System.out.println("Список самолётов пуст.");
+                        char letter = scanner.nextLine().charAt(0);
+                        displayAirplanes(repository.findAirplanesByFirstLetter(letter));
+                    }
+                    case 5 -> {
+                        System.out.print("Введите название рейса для удаления: ");
+                        String deleteName = scanner.nextLine();
+                        if (repository.removeAirplane(deleteName)) {
+                            System.out.println("Самолёт удалён.");
                         } else {
-                            System.out.println("Самолёты, название которых начинается на букву '" + letter + "':");
-                            boolean found = false;
-                            for (Airplane a : airplaneList) {
-                                if (a.flightName.toUpperCase().charAt(0) == letter) {
-                                    a.displayInfo();
-                                    found = true;
-                                }
-                            }
-                            if (!found) {
-                                System.out.println("Нет самолётов, название которых начинается с буквы '" + letter + "'.");
-                            }
+                            System.out.println("Самолёт с таким названием не найден.");
                         }
-                        break;
-
-                    case 5:
+                    }
+                    case 6 -> {
+                        System.out.print("Введите название рейса для изменения: ");
+                        String updateName = scanner.nextLine();
+                        System.out.print("Введите новое количество пассажиров: ");
+                        int newPassengers = scanner.nextInt();
+                        System.out.print("Введите новое количество топлива: ");
+                        double newFuel = scanner.nextDouble();
+                        if (!repository.updateAirplane(updateName, newPassengers, newFuel)) {
+                            System.out.println("Самолёт с таким названием не найден.");
+                        }
+                    }
+                    case 7 -> {
                         System.out.println("Выход...");
-                        break;
-
-                    default:
-                        System.out.println("Неверный выбор. Пожалуйста, выберите от 1 до 5.");
+                        scanner.close();
+                        return;
+                    }
+                    default -> System.out.println("Неверный выбор. Пожалуйста, выберите от 1 до 7.");
                 }
             } catch (InputMismatchException e) {
                 System.out.println("Пожалуйста, введите число.");
                 scanner.nextLine(); // Очистка буфера
             }
-        } while (choice != 5);
-
-        scanner.close();
+        }
     }
 }
